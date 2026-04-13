@@ -5,36 +5,37 @@ import os
 # ================= MODEL =================
 model = YOLO("runs/detect/train2/weights/best.pt")
 
-# ================= CHỌN NGUỒN =================
-source = r"E:\Identify and count\images\hq720 (1).jpg"
-# source = 0                    # Webcam
-# source = "video.mp4"          # Video
+# ================= CHỌN NGUỒN (chỉ bật 1 dòng) =================
+#source = r"E:\Identify and count\images\hq720 (1).jpg"      # ẢNH
+#source = r"E:\Identify and count\videos\18394353-hd_1080_1920_30fps.mp4"  # VIDEO
+source = 0                                                              # WEBCAM
 
-# ================= CẤU HÌNH =================
-line_y = 320                    # Vị trí đường đếm (tùy chỉnh theo video)
+# ================= CẤU HÌNH CHUNG =================
+line_y = 340                    # ← Điều chỉnh theo video (300-450)
 counted_ids = set()
 total_count = 0
+frame_count = 0
 
-# ================= FUNCTION =================
+# ================= FUNCTION XỬ LÝ =================
 def process_frame(frame, is_image=False):
-    global total_count, counted_ids
+    global total_count, counted_ids, frame_count
+    frame_count += 1
 
-    # Resize giữ tỷ lệ tốt hơn
+    # Resize giữ tỷ lệ
     h, w = frame.shape[:2]
     scale = 640 / max(h, w)
-    new_w = int(w * scale)
-    new_h = int(h * scale)
-    frame = cv2.resize(frame, (new_w, new_h))
+    frame = cv2.resize(frame, (int(w * scale), int(h * scale)))
 
-    # Track
+    # ================= TRACKING TỐI ƯU =================
     results = model.track(
         frame,
         persist=True,
-        conf=0.45,           # Có thể chỉnh 0.4 ~ 0.55
-        iou=0.5,
-        tracker="botsort.yaml",
+        conf=0.40,
+        iou=0.45,
+        tracker="botsort.yaml",      # ổn định nhất cho video
         imgsz=640,
-        augment= is_image    # Tăng augment cho ảnh tĩnh
+        augment=is_image,
+        max_det=50
     )
 
     for r in results:
@@ -50,56 +51,58 @@ def process_frame(frame, is_image=False):
             cx = int((x1 + x2) / 2)
             cy = int((y1 + y2) / 2)
 
-            # Vẽ box và ID
-            cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+            # Vẽ box + ID + conf
+            color = (0, 255, 0) if conf > 0.5 else (0, 165, 255)
+            cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
             cv2.putText(frame, f"ID {int(obj_id)} {conf:.2f}",
-                        (x1, y1 - 10),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
-
+                        (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 2)
             cv2.circle(frame, (cx, cy), 5, (0, 0, 255), -1)
 
             # ================= LOGIC ĐẾM =================
             if is_image:
-                # === ẢNH TĨNH: Đếm tất cả cá detect được ===
+                # Ảnh tĩnh: đếm tất cả cá detect được
                 if obj_id not in counted_ids:
                     counted_ids.add(obj_id)
                     total_count += 1
             else:
-                # === VIDEO / WEBCAM: Đếm khi qua đường ===
+                # Video/Webcam: đếm khi cá vượt đường line từ trên xuống
                 if cy > line_y and obj_id not in counted_ids:
                     counted_ids.add(obj_id)
                     total_count += 1
 
-    # Vẽ đường đếm (chỉ hiện khi là video/webcam)
+    # Vẽ đường line (chỉ video/webcam)
     if not is_image:
-        cv2.line(frame, (0, line_y), (frame.shape[1], line_y), (255, 0, 0), 2)
+        cv2.line(frame, (0, line_y), (frame.shape[1], line_y), (255, 0, 0), 3)
 
-    # Hiển thị tổng
-    cv2.putText(frame, f"Total: {total_count}",
-                (10, 40),
-                cv2.FONT_HERSHEY_SIMPLEX, 1.2, (0, 0, 255), 3)
+    # Hiển thị thông tin
+    cv2.putText(frame, f"Total: {total_count}", (10, 50),
+                cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 255), 4)
 
     return frame
 
 
 # ================= CHẠY THEO NGUỒN =================
-if isinstance(source, str) and os.path.isfile(source) and source.lower().endswith((".jpg", ".png", ".jpeg")):
-    # ================= XỬ LÝ ẢNH =================
+is_image_mode = isinstance(source, str) and os.path.isfile(source) and source.lower().endswith((".jpg", ".png", ".jpeg"))
+
+if is_image_mode:
+    # ================= ẢNH TĨNH =================
     frame = cv2.imread(source)
     if frame is None:
-        print("❌ Không đọc được ảnh")
+        print("❌ Không đọc được ảnh!")
         exit()
 
     frame = process_frame(frame, is_image=True)
-
     cv2.imshow("YOLO Image Tracking", frame)
+    print(f"✅ Xong ảnh - Tổng: {total_count} con")
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
 else:
-    # ================= VIDEO HOẶC WEBCAM =================
+    # ================= VIDEO / WEBCAM =================
     cap = cv2.VideoCapture(source)
-    cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)   # Giảm lag webcam
+    cap.set(cv2.CAP_PROP_BUFFERSIZE, 2)
+
+    print("Nhấn ESC để thoát | Nhấn R để reset đếm")
 
     while True:
         ret, frame = cap.read()
@@ -108,10 +111,16 @@ else:
 
         frame = process_frame(frame, is_image=False)
 
-        cv2.imshow("YOLO Tracking", frame)
+        cv2.imshow("YOLO Fish Counting", frame)
 
-        if cv2.waitKey(1) & 0xFF == 27:   # ESC để thoát
+        key = cv2.waitKey(1) & 0xFF
+        if key == 27:          # ESC
             break
+        elif key == ord('r') or key == ord('R'):
+            counted_ids.clear()
+            total_count = 0
+            print("🔄 Đã reset bộ đếm!")
 
     cap.release()
     cv2.destroyAllWindows()
+    print(f"✅ Kết thúc - Tổng cá đếm được: {total_count}")
