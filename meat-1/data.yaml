@@ -1,0 +1,14 @@
+names:
+- Fish
+- Meet
+- chicken
+nc: 3
+roboflow:
+  license: CC BY 4.0
+  project: meat-a9qkz
+  url: https://universe.roboflow.com/sages/meat-a9qkz/dataset/1
+  version: 1
+  workspace: sages
+test: ../test/images
+train: ../train/images
+val: ../valid/images

@@ -1,0 +1,36 @@
+# ================== DATASET LỚN ==================
+train/
+valid/
+test/
+images/
+labels/
+
+# ================== YOLO OUTPUT ==================
+runs/
+weights/
+*.pt
+*.onnx
+*.torchscript
+
+# ================== MEDIA NẶNG ==================
+videos/
+*.mp4
+*.avi
+*.mov
+*.mkv
+
+# ================== CACHE & ENV ==================
+__pycache__/
+*.cache
+*.pyc
+.venv/
+venv/
+env/
+labels.cache
+data.yaml.cache
+
+# ================== CHỈ GIỮ LẠI ẢNH TEST NHỎ ==================
+!images/Untitled-1-1-533x400.jpg
+!images/image.png
+!images/*.small.jpg
+!images/test*.jpg
