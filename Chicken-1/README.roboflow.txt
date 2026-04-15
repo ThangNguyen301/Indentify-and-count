@@ -1,8 +1,8 @@
 
-meat - v1 2025-06-10 5:36pm
+Chicken - v1 2025-09-19 12:30pm
 ==============================
 
-This dataset was exported via roboflow.com on June 10, 2025 at 9:42 AM GMT
+This dataset was exported via roboflow.com on September 23, 2025 at 1:09 AM GMT
 
 Roboflow is an end-to-end computer vision platform that helps you
 * collaborate with your team on computer vision projects
@@ -17,8 +17,8 @@ visit https://github.com/roboflow/notebooks
 
 To find over 100k other datasets and pre-trained models, visit https://universe.roboflow.com
 
-The dataset includes 3898 images.
-Meat are annotated in YOLOv8 format.
+The dataset includes 1063 images.
+Chicken_sick-chicken-healty are annotated in YOLOv8 format.
 
 The following pre-processing was applied to each image:
 * Auto-orientation of pixel data (with EXIF-orientation stripping)
@@ -27,7 +27,9 @@ The following pre-processing was applied to each image:
 The following augmentation was applied to create 3 versions of each source image:
 * 50% probability of horizontal flip
 * 50% probability of vertical flip
-* Equal probability of one of the following 90-degree rotations: none, clockwise, counter-clockwise, upside-down
+* Equal probability of one of the following 90-degree rotations: none, clockwise, counter-clockwise
+* Randomly crop between 0 and 20 percent of the image
+* Random rotation of between -15 and +15 degrees
 * Random brigthness adjustment of between -15 and +15 percent
 
 
